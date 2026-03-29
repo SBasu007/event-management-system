@@ -17,6 +17,11 @@ public class BudgetController {
         return service.setBudget(budget);
     }
 
+    @GetMapping("/{eventId}")
+    public Budget getBudget(@PathVariable Long eventId) {
+        return service.getBudgetByEventId(eventId);
+    }
+
     @GetMapping("/{eventId}/remaining")
     public Double remaining(@PathVariable Long eventId) {
         return service.getRemainingBudget(eventId);

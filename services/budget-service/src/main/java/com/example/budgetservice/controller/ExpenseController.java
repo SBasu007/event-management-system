@@ -23,4 +23,9 @@ public class ExpenseController {
     public List<Expense> get(@PathVariable Long eventId) {
         return service.getExpenses(eventId);
     }
+
+    @DeleteMapping("/{eventId}/auto")
+    public void clearAuto(@PathVariable Long eventId) {
+        service.clearAutoExpenses(eventId);
+    }
 }

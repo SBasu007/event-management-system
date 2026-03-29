@@ -4,6 +4,7 @@ import com.example.budgetservice.model.*;
 import com.example.budgetservice.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,7 +17,15 @@ public class BudgetService {
 
     // create/update budget
     public Budget setBudget(Budget budget) {
+        budgetRepo.findByEventId(budget.getEventId()).ifPresent(existing -> {
+            budget.setId(existing.getId());
+        });
         return budgetRepo.save(budget);
+    }
+
+    public Budget getBudgetByEventId(Long eventId) {
+        return budgetRepo.findByEventId(eventId)
+                .orElseThrow(() -> new RuntimeException("Budget not found"));
     }
 
     // add expense
@@ -27,6 +36,12 @@ public class BudgetService {
     // get expenses
     public List<Expense> getExpenses(Long eventId) {
         return expenseRepo.findByEventId(eventId);
+    }
+
+    @Transactional
+    public void clearAutoExpenses(Long eventId) {
+        expenseRepo.deleteByEventIdAndCategory(eventId, "Venue");
+        expenseRepo.deleteByEventIdAndCategoryStartingWith(eventId, "Vendor:");
     }
 
     // remaining budget

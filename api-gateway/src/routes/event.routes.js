@@ -82,6 +82,86 @@ router.get("/organizer/:organizerId", async (req, res) => {
   }
 });
 
+// GET ALL VENUES
+router.get("/venues", async (req, res) => {
+  try {
+    const response = await axios.get(
+      `${SERVICES.EVENT}/venues`
+    );
+
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET ALL VENDORS
+router.get("/vendors", async (req, res) => {
+  try {
+    const response = await axios.get(
+      `${SERVICES.EVENT}/vendors`
+    );
+
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ASSIGN MULTIPLE VENDORS TO EVENT
+router.post("/:eventId/vendors", verifyToken, async (req, res) => {
+  try {
+    const eventId = req.params.eventId;
+    const vendorIds = Array.isArray(req.body?.vendorIds) ? req.body.vendorIds : [];
+
+    const assignments = await Promise.all(
+      vendorIds.map((vendorId) =>
+        axios.post(`${SERVICES.EVENT}/event-vendors`, null, {
+          params: { eventId, vendorId },
+        })
+      )
+    );
+
+    res.json(assignments.map((assignment) => assignment.data));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// REPLACE EVENT VENDORS
+router.put("/:eventId/vendors", verifyToken, async (req, res) => {
+  try {
+    const eventId = req.params.eventId;
+    const vendorIds = Array.isArray(req.body?.vendorIds) ? req.body.vendorIds : [];
+
+    const existingMappingsRes = await axios.get(
+      `${SERVICES.EVENT}/event-vendors/event/${eventId}`
+    );
+
+    const existingMappings = Array.isArray(existingMappingsRes.data)
+      ? existingMappingsRes.data
+      : [];
+
+    await Promise.all(
+      existingMappings.map((mapping) =>
+        axios.delete(`${SERVICES.EVENT}/event-vendors/${mapping.id}`)
+      )
+    );
+
+    const assignments = await Promise.all(
+      vendorIds.map((vendorId) =>
+        axios.post(`${SERVICES.EVENT}/event-vendors`, null, {
+          params: { eventId, vendorId },
+        })
+      )
+    );
+
+    res.json(assignments.map((assignment) => assignment.data));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // GET EVENT BY ID
 router.get("/:id", async (req, res) => {

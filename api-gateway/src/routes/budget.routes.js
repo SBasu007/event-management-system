@@ -19,6 +19,19 @@ router.post("/", async (req, res) => {
   }
 });
 
+// GET BUDGET BY EVENT
+router.get("/:eventId", async (req, res) => {
+  try {
+    const response = await axios.get(
+      `${SERVICES.BUDGET}/budget/${req.params.eventId}`
+    );
+
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET REMAINING BUDGET
 router.get("/:eventId/remaining", async (req, res) => {
   try {
@@ -56,6 +69,19 @@ router.get("/expense/:eventId", async (req, res) => {
     );
 
     res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE AUTO-CALCULATED EXPENSES (VENUE + VENDORS)
+router.delete("/expense/:eventId/auto", async (req, res) => {
+  try {
+    await axios.delete(
+      `${SERVICES.BUDGET}/expenses/${req.params.eventId}/auto`
+    );
+
+    res.json({ message: "Auto expenses cleared" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
