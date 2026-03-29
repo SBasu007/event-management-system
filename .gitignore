@@ -1,0 +1,41 @@
+.env
+.env.local
+
+# Node.js projects
+api-gateway/node_modules/
+frontend/node_modules/
+frontend/.next/
+services/**/node_modules/
+
+# Java/Spring projects
+services/**/HELP.md
+services/**/target/
+services/**/build/
+services/**/.mvn/wrapper/maven-wrapper.jar
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
