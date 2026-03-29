@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function ProfilePanel({ isOpen, onClose, user, logout }) {
   const router = useRouter();
@@ -13,7 +14,7 @@ export default function ProfilePanel({ isOpen, onClose, user, logout }) {
   };
 
   const handleManageEvents = () => {
-    router.push("/organizer_dashboard");
+    router.push("/organizer_dashboard/events");
     onClose();
   };
     const handleViewBookings = () => {
@@ -35,7 +36,7 @@ export default function ProfilePanel({ isOpen, onClose, user, logout }) {
         {/* Header */}
         <div className="profile-panel-header">
           <button className="back-button" onClick={onClose} title="Close">
-            ←
+            <ChevronLeft size={18} />
           </button>
           <h2>Profile</h2>
         </div>
@@ -55,7 +56,7 @@ export default function ProfilePanel({ isOpen, onClose, user, logout }) {
         <div className="profile-section">
           <button className="profile-action-item with-arrow" onClick={handleViewBookings}>
             <span>View all bookings</span>
-            <span className="arrow">→</span>
+            <ChevronRight size={16} className="arrow" />
           </button>
         </div>
 
@@ -64,7 +65,7 @@ export default function ProfilePanel({ isOpen, onClose, user, logout }) {
             <h4 className="profile-section-title">Organizer Dashboard</h4>
             <button onClick={handleManageEvents} className="profile-action-item with-arrow">
               <span>Manage events</span>
-              <span className="arrow">→</span>
+              <ChevronRight size={16} className="arrow" />
             </button>
           </div>
         )}
@@ -74,7 +75,7 @@ export default function ProfilePanel({ isOpen, onClose, user, logout }) {
           <h4 className="profile-section-title">Support</h4>
           <button className="profile-action-item with-arrow">
             <span>Chat with us</span>
-            <span className="arrow">→</span>
+            <ChevronRight size={16} className="arrow" />
           </button>
         </div>
 

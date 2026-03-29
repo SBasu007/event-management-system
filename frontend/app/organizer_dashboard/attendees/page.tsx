@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { jsPDF } from "jspdf";
 import { useAuth } from "@/context/AuthContext";
 import { getEventsByOrganizerId } from "@/services/event.service";
 import { getFullAttendeesByEvent } from "@/services/attendee.service";
@@ -17,6 +17,7 @@ type UserInfo = {
     id?: string;
     name?: string;
     email?: string;
+    contact?: string;
 };
 
 type FullAttendee = {
@@ -38,8 +39,10 @@ export default function AttendeesPage() {
     const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
     const [selectedEventTitle, setSelectedEventTitle] = useState("");
     const [attendees, setAttendees] = useState<FullAttendee[]>([]);
+    const [allAttendees, setAllAttendees] = useState<FullAttendee[]>([]);
     const [attendeesLoading, setAttendeesLoading] = useState(false);
     const [attendeesError, setAttendeesError] = useState("");
+    const [generatingReport, setGeneratingReport] = useState(false);
 
     const loadEvents = useCallback(async () => {
         if (!organizerId) {
@@ -101,9 +104,11 @@ export default function AttendeesPage() {
         try {
             const res = await getFullAttendeesByEvent(event.id);
             const list = Array.isArray(res?.data) ? (res.data as FullAttendee[]) : [];
+            setAllAttendees(list);
             setAttendees(list.filter((attendee) => attendee.status === "rsvp"));
         } catch {
             setAttendeesError("Could not load attendee list for this event.");
+            setAllAttendees([]);
             setAttendees([]);
         } finally {
             setAttendeesLoading(false);
@@ -113,8 +118,110 @@ export default function AttendeesPage() {
     const clearSelection = () => {
         setSelectedEventId(null);
         setSelectedEventTitle("");
+        setAllAttendees([]);
         setAttendees([]);
         setAttendeesError("");
+    };
+
+    const selectedEvent = useMemo(
+        () => events.find((event) => event.id === selectedEventId) || null,
+        [events, selectedEventId]
+    );
+
+    const handleGeneratePdfReport = () => {
+        if (!selectedEventId) return;
+
+        try {
+            setGeneratingReport(true);
+            const doc = new jsPDF({ unit: "pt", format: "a4" });
+            let y = 48;
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(20);
+            doc.text("Event Attendees Report", 40, y);
+            y += 28;
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(12);
+            doc.text(`Event: ${selectedEvent?.title || selectedEventTitle || "N/A"}`, 40, y);
+            y += 18;
+            doc.text(`Date: ${formatDate(selectedEvent?.eventDate)}`, 40, y);
+            y += 18;
+            doc.text(`Time: ${formatTime(selectedEvent?.eventTime)}`, 40, y);
+            y += 18;
+            doc.text(`Total Attendees: ${allAttendees.length}`, 40, y);
+            y += 18;
+            doc.text(
+                `RSVP Attendees: ${allAttendees.filter((attendee) => attendee.status === "rsvp").length}`,
+                40,
+                y
+            );
+            y += 26;
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Attendee Details", 40, y);
+            y += 18;
+
+            const lineHeight = 14;
+            const pageBottom = 780;
+
+            const drawTableHeader = () => {
+                doc.setFont("helvetica", "bold");
+                doc.text("Name", 40, y);
+                doc.text("Email", 200, y);
+                doc.text("Contact", 355, y);
+                doc.text("Status", 490, y);
+                y += 10;
+                doc.line(40, y, 555, y);
+                y += 16;
+                doc.setFont("helvetica", "normal");
+            };
+
+            drawTableHeader();
+
+            if (allAttendees.length === 0) {
+                doc.text("No attendees found for this event.", 40, y);
+            } else {
+                allAttendees.forEach((attendee) => {
+                    const name = attendee.user?.name || "Unknown";
+                    const email = attendee.user?.email || "-";
+                    const contact = attendee.user?.contact || "-";
+                    const status = (attendee.status || "-").toUpperCase();
+
+                    const nameLines = doc.splitTextToSize(name, 150);
+                    const emailLines = doc.splitTextToSize(email, 145);
+                    const contactLines = doc.splitTextToSize(contact, 125);
+                    const statusLines = doc.splitTextToSize(status, 65);
+
+                    const lineCount = Math.max(
+                        nameLines.length,
+                        emailLines.length,
+                        contactLines.length,
+                        statusLines.length
+                    );
+                    const rowHeight = lineCount * lineHeight + 6;
+
+                    if (y + rowHeight > pageBottom) {
+                        doc.addPage();
+                        y = 48;
+                        drawTableHeader();
+                    }
+
+                    doc.text(nameLines, 40, y);
+                    doc.text(emailLines, 200, y);
+                    doc.text(contactLines, 355, y);
+                    doc.text(statusLines, 490, y);
+                    y += rowHeight;
+                });
+            }
+
+            const blobUrl = doc.output("bloburl");
+            window.open(blobUrl, "_blank", "noopener,noreferrer");
+        } catch {
+            setAttendeesError("Could not generate PDF report. Please try again.");
+        } finally {
+            setGeneratingReport(false);
+        }
     };
 
     return (
@@ -209,9 +316,19 @@ export default function AttendeesPage() {
             ) : (
                 <div className="flex-1 overflow-y-auto pr-2">
                     <div className="rounded-2xl border border-[#ddd6fb] bg-[#f8f6ff] p-5 shadow-[0_10px_24px_rgba(79,70,229,0.08)]">
-                        <h2 className="text-xl font-bold text-[#2b265f]">
-                            RSVP Attendees: {selectedEventTitle}
-                        </h2>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <h2 className="text-xl font-bold text-[#2b265f]">
+                                RSVP Attendees: {selectedEventTitle}
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={handleGeneratePdfReport}
+                                disabled={generatingReport || attendeesLoading}
+                                className="rounded-lg bg-[#4f46e5] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#4338ca] disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {generatingReport ? "Generating PDF..." : "Generate PDF Report"}
+                            </button>
+                        </div>
 
                         {attendeesLoading ? (
                             <div className="mt-4 rounded-xl border border-[#ddd6fb] bg-white/70 p-4 text-sm text-[#666286]">
@@ -238,7 +355,7 @@ export default function AttendeesPage() {
                                         <tr>
                                             <th className="px-4 py-3 font-semibold">Name</th>
                                             <th className="px-4 py-3 font-semibold">Email</th>
-                                            {/* <th className="px-4 py-3 font-semibold">User ID</th> */}
+                                            <th className="px-4 py-3 font-semibold">Contact</th>
                                             <th className="px-4 py-3 font-semibold">Status</th>
                                         </tr>
                                     </thead>
@@ -247,6 +364,7 @@ export default function AttendeesPage() {
                                             <tr key={attendee.id} className="border-t border-[#eee8ff] text-[#4d4a75]">
                                                 <td className="px-4 py-3">{attendee.user?.name || "Unknown"}</td>
                                                 <td className="px-4 py-3">{attendee.user?.email || "-"}</td>
+                                                <td className="px-4 py-3">{attendee.user?.contact || "-"}</td>
                                                 <td className="px-4 py-3 uppercase">{attendee.status || "-"}</td>
                                             </tr>
                                         ))}

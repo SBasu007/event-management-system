@@ -1,7 +1,7 @@
 import pool from "../db/db.js";
 import bcrypt from "bcrypt";
 
-export const registerUser = async ({ name, email, password, is_attendee, is_organizer, is_admin }) => {
+export const registerUser = async ({ name, email, password, is_attendee, is_organizer, is_admin, contact }) => {
 
   const hashed = await bcrypt.hash(password, 10);
   //Default checking for roles if not provided
@@ -9,9 +9,9 @@ export const registerUser = async ({ name, email, password, is_attendee, is_orga
   const organizer = is_organizer ?? false;
   const admin = is_admin ?? false;
   const result = await pool.query(
-    `INSERT INTO users (name, email, password_hash, is_attendee, is_organizer, is_admin)
-     VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-    [name, email, hashed, attendee, organizer, admin]
+    `INSERT INTO users (name, email, password_hash, is_attendee, is_organizer, is_admin, contact)
+     VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+    [name, email, hashed, attendee, organizer, admin, contact]
   );
 
   return result.rows[0];
@@ -35,7 +35,7 @@ export const loginUser = async ({ email, password }) => {
 // GET USER BY ID
 export const getUserById = async (id) => {
   const result = await pool.query(
-    "SELECT id, name, email, is_attendee, is_organizer, is_admin FROM users WHERE id=$1",
+    "SELECT id, name, email, is_attendee, is_organizer, is_admin, contact FROM users WHERE id=$1",
     [id]
   );
 
@@ -44,17 +44,17 @@ export const getUserById = async (id) => {
 
 // UPDATE USER
 export const updateUserService = async (id, data) => {
-  const { name, password } = data;
+  const { name, password, contact } = data;
 
   if (password) {
     const hashed = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
       `UPDATE users 
-       SET name=$1, password_hash=$2 
-       WHERE id=$3 
-       RETURNING id, name, email, is_attendee, is_organizer, is_admin`,
-      [name, hashed, id]
+       SET name=$1, password_hash=$2, contact=$3
+       WHERE id=$4 
+       RETURNING id, name, email, is_attendee, is_organizer, is_admin, contact`,
+      [name, hashed, contact, id]
     );
 
     return result.rows[0];
@@ -62,10 +62,10 @@ export const updateUserService = async (id, data) => {
 
   const result = await pool.query(
     `UPDATE users 
-     SET name=$1 
-     WHERE id=$2 
-     RETURNING id, name, email, is_attendee, is_organizer, is_admin`,
-    [name, id]
+     SET name=$1, contact=$2
+     WHERE id=$3 
+     RETURNING id, name, email, is_attendee, is_organizer, is_admin, contact`,
+    [name, contact, id]
   );
 
   return result.rows[0];

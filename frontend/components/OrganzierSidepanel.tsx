@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   ChevronDown,
@@ -9,12 +10,13 @@ import {
   MapPin,
   Users,
   DollarSign,
-  BarChart3,
+  IndianRupee,
   Utensils,
 } from "lucide-react";
 
 export default function OrganzierSidepanel() {
   const { user } = useAuth();
+  const pathname = usePathname();
   const [expandedSections, setExpandedSections] = useState<{
     [key: string]: boolean;
   }>({
@@ -39,13 +41,25 @@ export default function OrganzierSidepanel() {
   }: {
     href: string;
     label: string;
-  }) => (
-    <Link href={href}>
-      <div className="ml-4 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 rounded-md transition-colors hover:text-blue-600">
+  }) => {
+    const isActive =
+      pathname === href ||
+      (href !== "/" && pathname?.startsWith(`${href}/`));
+
+    return (
+      <Link href={href}>
+        <div
+          className={`ml-4 rounded-md px-3 py-2 text-sm transition-colors ${
+            isActive
+              ? "bg-[#8a7bf0] font-semibold text-white"
+              : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+          }`}
+        >
         {label}
-      </div>
-    </Link>
-  );
+        </div>
+      </Link>
+    );
+  };
 
   const SectionHeader = ({
     label,
@@ -150,7 +164,7 @@ export default function OrganzierSidepanel() {
         {/* BUDGET & EXPENSES SECTION */}
         <SectionHeader
           label="Budget & Expenses"
-          icon={<DollarSign size={18} className="text-green-700" />}
+          icon={<IndianRupee size={18} className="text-green-700" />}
           section="budget"
         />
         {expandedSections.budget && (
@@ -175,7 +189,7 @@ export default function OrganzierSidepanel() {
         )}
 
         {/* REPORTS SECTION */}
-        <SectionHeader
+        {/* <SectionHeader
           label="Reports"
           icon={<BarChart3 size={18} className="text-red-600" />}
           section="reports"
@@ -195,7 +209,7 @@ export default function OrganzierSidepanel() {
               label="Event Performance"
             />
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

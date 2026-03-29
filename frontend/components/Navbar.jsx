@@ -8,7 +8,13 @@ import ProfilePanel from "./ProfilePanel";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const pathname = usePathname();
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+
+  const isActive = (href) => {
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname?.startsWith(`${href}/`);
+  };
  
 
   return (
@@ -19,8 +25,15 @@ export default function Navbar() {
         </div>
 
         <nav className="nav-center" aria-label="Primary navigation">
-          <Link href="/">Home</Link>
-          <Link href="/events">Events</Link>
+          <Link href="/" className={`nav-link ${isActive("/") ? "nav-link-active" : ""}`}>
+            Home
+          </Link>
+          <Link
+            href="/events"
+            className={`nav-link ${isActive("/events") ? "nav-link-active" : ""}`}
+          >
+            Events
+          </Link>
         </nav>
 
         <div className="nav-actions">

@@ -11,6 +11,7 @@ export default function RegisterForm() {
     name: "",
     email: "",
     password: "",
+    contact: "",
     is_attendee: true,
     is_organizer: false,
     is_admin: false,
@@ -88,6 +89,21 @@ export default function RegisterForm() {
             name="password"
             placeholder="Create a password"
             value={form.password}
+            onChange={handleChange}
+            className="w-full rounded-xl border border-[#d6cdf5] bg-white px-3 py-2.5 text-sm text-[#2a2458] outline-none transition focus:border-[#4f46e5]"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-semibold text-[#30295e]">
+            Contact
+          </label>
+          <input
+            type="tel"
+            name="contact"
+            placeholder="10-digit phone number"
+            value={form.contact}
             onChange={handleChange}
             className="w-full rounded-xl border border-[#d6cdf5] bg-white px-3 py-2.5 text-sm text-[#2a2458] outline-none transition focus:border-[#4f46e5]"
             required

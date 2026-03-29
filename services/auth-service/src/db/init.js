@@ -49,6 +49,11 @@ export const createTables = async () => {
     );
   `);
 
+  await client.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS contact VARCHAR(13);
+  `);
+
   console.log("Users table ready");
 
   await client.end();
