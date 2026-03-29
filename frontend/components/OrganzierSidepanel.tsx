@@ -138,12 +138,12 @@ export default function OrganzierSidepanel() {
           <div className="space-y-1 mb-3">
             <SectionItem
               href="/organizer_dashboard/attendees"
-              label="View Attendees List"
+              label="Manage Attendees List"
             />
-            <SectionItem
+            {/* <SectionItem
               href="/organizer_dashboard/attendees/rsvp"
               label="RSVP Status"
-            />
+            /> */}
           </div>
         )}
 
