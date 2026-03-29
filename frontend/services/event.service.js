@@ -40,9 +40,25 @@ export const setEventBudget = (eventId, totalAmount) =>
 // get budget for an event
 export const getBudgetByEventId = (eventId) => API.get(`/budget/${eventId}`);
 
+// get remaining budget for an event
+export const getRemainingBudgetByEventId = (eventId) =>
+	API.get(`/budget/${eventId}/remaining`);
+
+// get expenses for an event
+export const getExpensesByEventId = (eventId) =>
+	API.get(`/budget/expense/${eventId}`);
+
 // add expense for an event
 export const addEventExpense = (eventId, category, amount) =>
 	API.post("/budget/expense", { eventId, category, amount });
+
+// update expense by id
+export const updateExpenseById = (id, category, amount) =>
+	API.put(`/budget/expense/${id}`, { category, amount });
+
+// delete expense by id
+export const deleteExpenseById = (id) =>
+	API.delete(`/budget/expense/${id}`);
 
 // clear auto-calculated venue/vendor expenses
 export const clearAutoExpenses = (eventId) =>

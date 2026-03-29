@@ -19,6 +19,11 @@ public class ExpenseController {
         return service.addExpense(expense);
     }
 
+    @PutMapping("/{id}")
+    public Expense update(@PathVariable Long id, @RequestBody Expense expense) {
+        return service.updateExpense(id, expense);
+    }
+
     @GetMapping("/{eventId}")
     public List<Expense> get(@PathVariable Long eventId) {
         return service.getExpenses(eventId);
@@ -27,5 +32,10 @@ public class ExpenseController {
     @DeleteMapping("/{eventId}/auto")
     public void clearAuto(@PathVariable Long eventId) {
         service.clearAutoExpenses(eventId);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        service.deleteExpense(id);
     }
 }

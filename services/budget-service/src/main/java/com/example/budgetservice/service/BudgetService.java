@@ -33,6 +33,22 @@ public class BudgetService {
         return expenseRepo.save(expense);
     }
 
+    @Transactional
+    public Expense updateExpense(Long id, Expense expense) {
+        Expense existing = expenseRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Expense not found"));
+
+        existing.setCategory(expense.getCategory());
+        existing.setAmount(expense.getAmount());
+
+        return expenseRepo.save(existing);
+    }
+
+    @Transactional
+    public void deleteExpense(Long id) {
+        expenseRepo.deleteById(id);
+    }
+
     // get expenses
     public List<Expense> getExpenses(Long eventId) {
         return expenseRepo.findByEventId(eventId);

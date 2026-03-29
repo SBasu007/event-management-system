@@ -29,7 +29,7 @@ export default function HomePage() {
             href="/events"
             className="rounded-xl bg-[#dcd7f2] px-10 py-3 text-sm font-semibold text-[#312e5a] transition hover:-translate-y-0.5 hover:bg-[#d1caee]"
           >
-            Browse Categories
+            Browse Events
           </Link>
         </div>
       </div>

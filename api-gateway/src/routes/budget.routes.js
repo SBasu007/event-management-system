@@ -60,6 +60,20 @@ router.post("/expense", async (req, res) => {
   }
 });
 
+// UPDATE EXPENSE
+router.put("/expense/:id", async (req, res) => {
+  try {
+    const response = await axios.put(
+      `${SERVICES.BUDGET}/expenses/${req.params.id}`,
+      req.body
+    );
+
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // GET EXPENSES
 router.get("/expense/:eventId", async (req, res) => {
@@ -82,6 +96,19 @@ router.delete("/expense/:eventId/auto", async (req, res) => {
     );
 
     res.json({ message: "Auto expenses cleared" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE EXPENSE
+router.delete("/expense/:id", async (req, res) => {
+  try {
+    await axios.delete(
+      `${SERVICES.BUDGET}/expenses/${req.params.id}`
+    );
+
+    res.json({ message: "Expense deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

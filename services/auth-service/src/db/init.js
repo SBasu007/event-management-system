@@ -44,7 +44,8 @@ export const createTables = async () => {
       is_attendee BOOLEAN DEFAULT FALSE,
       is_organizer BOOLEAN DEFAULT FALSE,
       is_admin BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      contact VARCHAR(13)
     );
   `);
 

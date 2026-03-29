@@ -157,20 +157,20 @@ export default function OrganzierSidepanel() {
           <div className="space-y-1 mb-3">
             <SectionItem
               href="/organizer_dashboard/budget"
-              label="Set Budget"
+              label="Budget Overview"
             />
             <SectionItem
               href="/organizer_dashboard/expenses"
               label="Add Expenses"
             />
-            <SectionItem
+            {/* <SectionItem
               href="/organizer_dashboard/budget/remaining"
               label="View Remaining Budget"
             />
             <SectionItem
               href="/organizer_dashboard/budget/report"
               label="Generate Report"
-            />
+            /> */}
           </div>
         )}
 
