@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import WarningConfirmModal from "@/components/ui/WarningConfirmModal";
 import {
   addEventExpense,
   assignVendorsToEvent,
   createEvent,
-  getEventsByOrganizerId,
+  disableEvent,
+  enableEvent,
+  getAllEventsByOrganizerId,
   getVenues,
   getVendors,
   setEventBudget,
@@ -25,6 +28,8 @@ export default function EventsPage() {
   const [formOptionsError, setFormOptionsError] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState("");
+  const [togglingEventId, setTogglingEventId] = useState(null);
+  const [toggleTargetEventId, setToggleTargetEventId] = useState(null);
   const [createForm, setCreateForm] = useState({
     title: "",
     description: "",
@@ -51,7 +56,7 @@ export default function EventsPage() {
     setError("");
 
     try {
-      const res = await getEventsByOrganizerId(organizerId);
+      const res = await getAllEventsByOrganizerId(organizerId);
       if (!isCancelled) {
         setEvents(Array.isArray(res?.data) ? res.data : []);
       }
@@ -308,6 +313,45 @@ export default function EventsPage() {
     }
   };
 
+  const handleToggleEvent = (eventId) => {
+    if (!eventId) return;
+    setToggleTargetEventId(eventId);
+  };
+
+  const handleCancelToggle = () => {
+    if (togglingEventId) return;
+    setToggleTargetEventId(null);
+  };
+
+  const toggleTargetEvent = useMemo(
+    () => events.find((event) => event.id === toggleTargetEventId) || null,
+    [events, toggleTargetEventId]
+  );
+
+  const handleConfirmToggle = async () => {
+    if (!toggleTargetEvent) return;
+    const isActive = toggleTargetEvent.active !== false;
+
+    try {
+      setTogglingEventId(toggleTargetEvent.id);
+      if (isActive) {
+        await disableEvent(toggleTargetEvent.id);
+      } else {
+        await enableEvent(toggleTargetEvent.id);
+      }
+      await loadOrganizerEvents();
+      setToggleTargetEventId(null);
+    } catch {
+      setError(
+        isActive
+          ? "Could not disable event. Please try again."
+          : "Could not enable event. Please try again."
+      );
+    } finally {
+      setTogglingEventId(null);
+    }
+  };
+
   return (
     <div className="h-[calc(100vh-130px)] flex flex-col rounded-2xl border border-[#ddd6fb] bg-[#efecfb] p-5 shadow-[0_14px_30px_rgba(79,70,229,0.08)]">
       <div className="mb-5 flex items-center justify-between gap-3">
@@ -349,7 +393,18 @@ export default function EventsPage() {
               >
                 <div className="flex flex-wrap items-center gap-4 lg:flex-nowrap lg:justify-between">
                   <div className="min-w-[180px] flex-1">
-                    <h2 className="text-lg font-bold text-[#2b265f]">{event.title}</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-bold text-[#2b265f]">{event.title}</h2>
+                      {event.active === false ? (
+                        <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                          Disabled
+                        </span>
+                      ) : (
+                        <span className="rounded-full border border-green-300 bg-green-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-700">
+                          Active
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="min-w-[240px] flex-[2] rounded-lg bg-white/70 px-3 py-2 text-sm text-[#4d4a75]">
@@ -379,6 +434,24 @@ export default function EventsPage() {
                     >
                       Edit
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleEvent(event.id)}
+                      disabled={togglingEventId === event.id}
+                      className={`rounded-lg border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                        event.active === false
+                          ? "border-green-300 bg-white text-green-700 hover:bg-green-50"
+                          : "border-red-300 bg-white text-red-700 hover:bg-red-50"
+                      }`}
+                    >
+                      {togglingEventId === event.id
+                        ? event.active === false
+                          ? "Enabling..."
+                          : "Disabling..."
+                        : event.active === false
+                          ? "Enable"
+                          : "Disable"}
+                    </button>
                   </div>
                 </div>
               </article>
@@ -632,6 +705,22 @@ export default function EventsPage() {
           </div>
         </div>
       ) : null}
+
+      <WarningConfirmModal
+        open={Boolean(toggleTargetEventId)}
+        title={toggleTargetEvent?.active === false ? "Enable Event" : "Disable Event"}
+        message={
+          toggleTargetEvent?.active === false
+            ? "Enable this event? It will be visible again in active event views."
+            : "Disable this event? It will be hidden from active event views."
+        }
+        confirmText={toggleTargetEvent?.active === false ? "Enable Event" : "Disable Event"}
+        cancelText={toggleTargetEvent?.active === false ? "Keep Disabled" : "Keep Active"}
+        loadingText={toggleTargetEvent?.active === false ? "Enabling..." : "Disabling..."}
+        onConfirm={handleConfirmToggle}
+        onCancel={handleCancelToggle}
+        loading={Boolean(togglingEventId)}
+      />
     </div>
   );
 }

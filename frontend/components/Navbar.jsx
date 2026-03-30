@@ -11,6 +11,10 @@ export default function Navbar() {
   const pathname = usePathname();
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
   const isActive = (href) => {
     if (href === "/") return pathname === "/";
     return pathname === href || pathname?.startsWith(`${href}/`);
@@ -34,6 +38,12 @@ export default function Navbar() {
           >
             Events
           </Link>
+          {/* <Link
+            href="/admin"
+            className={`nav-link ${isActive("/admin") ? "nav-link-active" : ""}`}
+          >
+            Admin
+          </Link> */}
         </nav>
 
         <div className="nav-actions">

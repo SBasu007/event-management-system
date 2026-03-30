@@ -11,3 +11,15 @@ export const registerUser = (data) => {
 export const getMe = () => {
   return API.get("/auth/me");
 };
+
+export const adminLogin = (data) => {
+  return API.post("/auth/admin/login", data);
+};
+
+export const getAdminMe = (adminToken) => {
+  return API.get("/auth/admin/me", {
+    headers: {
+      Authorization: `Bearer ${adminToken}`,
+    },
+  });
+};

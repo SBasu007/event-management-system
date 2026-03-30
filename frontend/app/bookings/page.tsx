@@ -15,6 +15,7 @@ type BookingWithEvent = {
         id?: number;
         title?: string;
         description?: string;
+        active?: boolean;
         eventDate?: string;
         event_date?: string;
         eventTime?: string;
@@ -174,6 +175,7 @@ export default function BookingsPage() {
                                 const event = booking.event;
                                 const title = event?.title ?? "Event";
                                 const description = event?.description ?? "No description available.";
+                                const isDisabled = event?.active === false;
                                 const eventDate = event?.eventDate ?? event?.event_date;
                                 const eventTime = event?.eventTime ?? event?.event_time;
                                 const eventImage = event?.imgUrl ?? event?.img_url ?? event?.imageUrl;
@@ -195,7 +197,14 @@ export default function BookingsPage() {
                                         </div>
 
                                         <div className="space-y-2 p-3">
-                                            <h2 className="line-clamp-1 text-base font-bold text-[#231f52]">{title}</h2>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <h2 className="line-clamp-1 text-base font-bold text-[#231f52]">{title}</h2>
+                                                {isDisabled ? (
+                                                    <span className="shrink-0 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                                                        Disabled by organizer
+                                                    </span>
+                                                ) : null}
+                                            </div>
                                             <p className="line-clamp-2 text-xs text-[#666286]">{description}</p>
                                             <div className="text-xs font-medium text-[#4f46e5]">
                                                 {formatDate(eventDate)} • {formatTime(eventTime)}
