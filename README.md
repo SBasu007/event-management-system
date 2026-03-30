@@ -1,47 +1,133 @@
 # Event Management Platform
 
-Microservices-based event management application with:
+A full-stack, microservices-based event management system with Dockerized local development.
 
-- Frontend: Next.js
+## Stack
+
+- Frontend: Next.js 16 + React 19
 - API Gateway: Node.js + Express
-- Services:
-	- Auth Service (Node.js)
-	- Attendee Service (Node.js)
-	- Event Service (Spring Boot)
-	- Budget Service (Spring Boot)
-- Database: PostgreSQL
+- Backend Services:
+  - Auth Service (Node.js)
+  - Attendee Service (Node.js)
+  - Event Service (Spring Boot, Java 21)
+  - Budget Service (Spring Boot, Java 21)
+- Database: PostgreSQL 16
+- Orchestration: Docker Compose
 
-This guide helps a new developer clone, configure, and run the project locally.
+## Architecture
 
-## 1) Clone The Repository
+Frontend (3000) calls API Gateway (5000), and the gateway routes requests to:
+
+- Auth Service (5001)
+- Event Service (5002)
+- Budget Service (5003)
+- Attendee Service (5004)
+
+All services use PostgreSQL (5432). Databases are auto-created by `infrastructure/db/init-dbs.sql` when containers start.
+
+## Prerequisites
+
+For Docker-first setup (recommended):
+
+- Docker Desktop (latest stable)
+- Docker Compose v2
+
+For non-Docker local run:
+
+- Node.js 20+
+- Java 21
+- Maven (or Maven Wrapper)
+- PostgreSQL 14+
+
+## Quick Start (Recommended: Docker)
+
+1. Clone and open project root.
 
 ```bash
 git clone <your-repository-url>
 cd event-management
 ```
 
-## 2) Prerequisites
+2. Ensure `.env.docker` exists at project root.
 
-Install the following before running locally:
-
-- Git
-- Node.js 18+ and npm
-- Java 21
-- Maven (optional, wrappers are included for Java services)
-- PostgreSQL 14+ (or compatible)
-
-Quick version checks:
+3. Build and start all services.
 
 ```bash
-node -v
-npm -v
-java -version
-psql --version
+docker compose up -d --build
 ```
 
-## 3) Configure Environment Variables
+4. Verify running containers.
 
-Create or update root `.env` file:
+```bash
+docker compose ps
+```
+
+5. Open app.
+
+- Frontend: http://localhost:3000
+- API Gateway: http://localhost:5000
+
+## Docker Reset Commands
+
+Clean stop (keep DB volume):
+
+```bash
+docker compose down --remove-orphans
+```
+
+Full reset including PostgreSQL volume/data:
+
+```bash
+docker compose down -v --remove-orphans
+```
+
+Rebuild from scratch (no cache):
+
+```bash
+docker compose build --no-cache
+docker compose up -d
+```
+
+## Important Update: Faster Docker Builds
+
+This project now includes a root `.dockerignore` tuned for this monorepo.
+
+It prevents large local artifacts from being sent to Docker build context, especially:
+
+- `frontend/.next`
+- `frontend/node_modules`
+- all `node_modules`
+- Java `target` directories
+
+This significantly improves frontend image build time and reduces context transfer size.
+
+## Service Port Map
+
+| Component | Port | Purpose |
+|---|---:|---|
+| Frontend | 3000 | UI (Next.js) |
+| API Gateway | 5000 | Single backend entry point |
+| Auth Service | 5001 | User/admin auth and JWT |
+| Event Service | 5002 | Events, venues, vendors |
+| Budget Service | 5003 | Budgets and expenses |
+| Attendee Service | 5004 | Bookings and attendee data |
+| PostgreSQL | 5432 | Data store |
+
+## Environment Variables
+
+### Docker runtime
+
+`docker-compose.yml` loads backend service env from `.env.docker`.
+
+Frontend in Docker gets:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
+```
+
+### Local non-Docker runtime
+
+Create root `.env`:
 
 ```env
 JWT_SECRET=change-this-to-a-long-random-secret
@@ -63,6 +149,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=change-this-db-password
+
 EVENT_DB_URL=jdbc:postgresql://localhost:5432/event_db
 BUDGET_DB_URL=jdbc:postgresql://localhost:5432/budget_db
 
@@ -71,7 +158,7 @@ ADMIN_PASSWORD=change-this-password
 ADMIN_NAME=Platform Admin
 ```
 
-Create or update `frontend/.env.local` file:
+Create `frontend/.env.local`:
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
@@ -79,19 +166,12 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
 
 Notes:
 
-- API Gateway, Auth Service, Attendee Service, Event Service, and Budget Service read values from the root `.env`.
-- Frontend reads `NEXT_PUBLIC_API_BASE_URL` from `frontend/.env.local`.
-- `JWT_SECRET` must be the same for Auth Service and API Gateway.
+- `JWT_SECRET` must match between Auth Service and API Gateway.
+- `auth_db` and `attendee_db` names are fixed in Node service DB config.
 
-## 4) Set Up PostgreSQL Databases
+## Run Without Docker (Optional)
 
-The code currently expects PostgreSQL on:
-
-- host: `localhost`
-- port: `5432`
-- user: `postgres`
-
-Create required databases:
+1. Create PostgreSQL databases:
 
 ```sql
 CREATE DATABASE auth_db;
@@ -100,14 +180,7 @@ CREATE DATABASE event_db;
 CREATE DATABASE budget_db;
 ```
 
-Important:
-
-- DB credentials are now read from root `.env`.
-- `auth_db` and `attendee_db` database names are currently fixed in Node service code.
-
-## 5) Install Dependencies
-
-Run in project root:
+2. Install dependencies:
 
 ```bash
 cd api-gateway && npm install && cd ..
@@ -116,112 +189,22 @@ cd services/attendee-service && npm install && cd ../..
 cd frontend && npm install && cd ..
 ```
 
-## 6) Run Services (Use Separate Terminals)
-
-Start services in this order.
-
-### Terminal 1: Auth Service (`AUTH_SERVICE_PORT`, default 5001)
+3. Start services (separate terminals):
 
 ```bash
-cd services/auth-service
-node src/app.js
+cd services/auth-service && node src/app.js
+cd services/event-service && ./mvnw spring-boot:run
+cd services/budget-service && ./mvnw spring-boot:run
+cd services/attendee-service && node src/app.js
+cd api-gateway && node src/app.js
+cd frontend && npm run dev
 ```
 
-### Terminal 2: Event Service (`EVENT_SERVICE_PORT`, default 5002)
+On Windows CMD/PowerShell for Java services, use `mvnw.cmd spring-boot:run`.
 
-Windows CMD/PowerShell:
+## API Gateway Routes
 
-```bat
-cd services\event-service
-mvnw.cmd spring-boot:run
-```
-
-Git Bash:
-
-```bash
-cd services/event-service
-./mvnw spring-boot:run
-```
-
-### Terminal 3: Budget Service (`BUDGET_SERVICE_PORT`, default 5003)
-
-Windows CMD/PowerShell:
-
-```bat
-cd services\budget-service
-mvnw.cmd spring-boot:run
-```
-
-Git Bash:
-
-```bash
-cd services/budget-service
-./mvnw spring-boot:run
-```
-
-### Terminal 4: Attendee Service (`ATTENDEE_SERVICE_PORT`, default 5004)
-
-```bash
-cd services/attendee-service
-node src/app.js
-```
-
-### Terminal 5: API Gateway (`API_GATEWAY_PORT`, default 5000)
-
-```bash
-cd api-gateway
-node src/app.js
-```
-
-### Terminal 6: Frontend (3000)
-
-```bash
-cd frontend
-npm run dev
-```
-
-Open:
-
-- Frontend: http://localhost:3000
-- API Gateway: http://localhost:5000
-
-## 7) Quick Smoke Checks
-
-After all services start:
-
-```bash
-curl http://localhost:5000/events
-curl http://localhost:5000/events/venues
-curl http://localhost:5000/events/vendors
-```
-
-If these return JSON (including empty arrays), the gateway pathing is working.
-
-Gateway responses are standardized as:
-
-```json
-{
-	"status": "success",
-	"message": "Data fetched successfully",
-	"data": {}
-}
-```
-
-## 8) Service And Port Map
-
-| Component | Port | Notes |
-|---|---:|---|
-| Frontend (Next.js) | 3000 | Calls gateway at `http://localhost:5000` |
-| API Gateway | 5000 | Aggregates and proxies all backend services |
-| Auth Service | 5001 | JWT + user/admin auth |
-| Event Service | 5002 | Event, venue, vendor operations |
-| Budget Service | 5003 | Budget and expense operations |
-| Attendee Service | 5004 | RSVP and attendee records |
-| PostgreSQL | 5432 | Stores all service databases |
-
-## 9) API Gateway Base Routes
-
-Gateway prefixes:
+Base route groups:
 
 - `/auth`
 - `/events`
@@ -237,32 +220,55 @@ Examples:
 - `POST /budget`
 - `POST /attendees/book`
 
-## 10) Docker Status
+## Smoke Test
 
-Currently, Docker artifacts in this repository are not fully configured:
+```bash
+curl http://localhost:5000/events
+curl http://localhost:5000/events/venues
+curl http://localhost:5000/events/vendors
+```
 
-- Root `docker-compose.yml` is empty.
-- Dockerfiles under `infrastructure/docker/` are empty.
+## Logs and Debugging
 
-Use the manual local run steps above.
+All logs:
 
-## 11) Troubleshooting
+```bash
+docker compose logs -f
+```
+
+Specific service logs:
+
+```bash
+docker compose logs -f frontend
+docker compose logs -f api-gateway
+docker compose logs -f auth-service
+docker compose logs -f event-service
+docker compose logs -f budget-service
+docker compose logs -f attendee-service
+```
+
+## Troubleshooting
+
+### Build context is too large / frontend build is slow
+
+- Ensure root `.dockerignore` exists and is committed.
+- Rebuild with no cache:
+
+```bash
+docker compose build --no-cache frontend
+```
 
 ### Port already in use
 
-Stop the process using the conflicting port, then restart the service.
+- Stop conflicting process or change port mapping in `docker-compose.yml`.
 
-### Database connection failed
+### Database connection issues
 
-Check PostgreSQL is running, database names exist, and credentials in root `.env` are correct.
+- Check `postgres` container is healthy: `docker compose ps`.
+- Confirm env values in `.env.docker` (Docker) or `.env` (local).
 
-If you still see auth failures, verify there is no trailing space in `DB_PASSWORD`.
+### JWT or auth errors
 
-### JWT errors (`Invalid token`)
+- Verify `JWT_SECRET` is set and consistent between gateway and auth service.
 
-Ensure the same `JWT_SECRET` is used across Auth Service and API Gateway from the root `.env`.
-
-### CORS issues
-
-Set `FRONTEND_ORIGIN=http://localhost:3000` in root `.env` and restart API Gateway.
 
