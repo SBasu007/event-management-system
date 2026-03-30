@@ -11,9 +11,16 @@ export default function LoginForm() {
     email: "",
     password: "",
   });
+  const [statusTab, setStatusTab] = useState({
+    type: "",
+    message: "",
+  });
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    if (statusTab.message) {
+      setStatusTab({ type: "", message: "" });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -25,21 +32,32 @@ export default function LoginForm() {
       console.log("TOKEN:", res.data?.token);
 
       if (!res.data?.token) {
-        alert("No token received");
+        setStatusTab({
+          type: "error",
+          message: "Login failed. No token received.",
+        });
         return;
       }
 
       //  use context
       login(res.data.token);
 
-      alert("Logged in successfully!");
+      setStatusTab({
+        type: "success",
+        message: "Login successful. Redirecting...",
+      });
 
       // better navigation
-      window.location.href = "/";
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 800);
 
     } catch (err) {
       console.error(err.response?.data || err.message);
-      alert("Invalid credentials");
+      setStatusTab({
+        type: "error",
+        message: "Invalid credentials. Please try again.",
+      });
     }
   };
 
@@ -90,6 +108,18 @@ export default function LoginForm() {
         >
           Login
         </button>
+
+        {statusTab.message ? (
+          <div
+            className={`rounded-xl border px-3 py-2 text-sm font-medium ${
+              statusTab.type === "success"
+                ? "border-green-200 bg-green-50 text-green-700"
+                : "border-red-200 bg-red-50 text-red-700"
+            }`}
+          >
+            {statusTab.message}
+          </div>
+        ) : null}
       </div>
     </form>
   );

@@ -29,6 +29,50 @@ app.use(
   })
 );
 
+const defaultMessageByMethod = {
+  GET: "Data fetched successfully",
+  POST: "Resource created successfully",
+  PUT: "Resource updated successfully",
+  PATCH: "Resource updated successfully",
+  DELETE: "Resource deleted successfully",
+};
+
+app.use((req, res, next) => {
+  const originalJson = res.json.bind(res);
+
+  res.json = (payload) => {
+    const statusCode = res.statusCode || 200;
+    const isError = statusCode >= 400;
+    const payloadObj = payload && typeof payload === "object" ? payload : null;
+
+    if (payloadObj?.status && payloadObj?.message) {
+      return originalJson(payloadObj);
+    }
+
+    if (isError) {
+      const derivedMessage =
+        payloadObj?.message || payloadObj?.error || "Request failed";
+
+      return originalJson({
+        status: "error",
+        message: derivedMessage,
+        error: payloadObj || null,
+      });
+    }
+
+    const derivedMessage =
+      payloadObj?.message || defaultMessageByMethod[req.method] || "Request successful";
+
+    return originalJson({
+      status: "success",
+      message: derivedMessage,
+      data: payload,
+    });
+  };
+
+  next();
+});
+
 // DEBUG
 app.use((req, res, next) => {
   console.log(" Gateway:", req.method, req.url);

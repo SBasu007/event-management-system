@@ -13,4 +13,41 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
+API.interceptors.response.use(
+  (response) => {
+    const body = response?.data;
+
+    if (
+      body &&
+      typeof body === "object" &&
+      "status" in body &&
+      "message" in body
+    ) {
+      response.apiStatus = body.status;
+      response.apiMessage = body.message;
+      response.data = Object.prototype.hasOwnProperty.call(body, "data")
+        ? body.data
+        : body;
+    }
+
+    return response;
+  },
+  (error) => {
+    const body = error?.response?.data;
+
+    if (
+      body &&
+      typeof body === "object" &&
+      "status" in body &&
+      "message" in body
+    ) {
+      error.apiStatus = body.status;
+      error.apiMessage = body.message;
+      error.message = body.message || error.message;
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export default API;

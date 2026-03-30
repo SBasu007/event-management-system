@@ -53,7 +53,7 @@ export default function EventCard({
         {eventId ? (
           <Link
             href={`/events/${eventId}`}
-            className="mt-2 block w-full rounded-lg bg-blue-600 px-4 py-2 text-center font-medium text-white transition-colors duration-200 hover:bg-blue-700"
+            className="mt-2 block w-full rounded-lg bg-[#4f46e5] px-4 py-2 text-center font-medium text-white transition-colors duration-200 hover:bg-[#4338ca]"
           >
             View Details
           </Link>

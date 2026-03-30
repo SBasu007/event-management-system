@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { AuthProvider } from "@/context/AuthContext";
 import "../styles/globals.css";
 
@@ -12,9 +13,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <AuthProvider>
-          <div className="">
+          <div className="flex min-h-screen flex-col">
             <Navbar />
-            <main className="">{children}</main>
+            <main className="flex-1">{children}</main>
           </div>
         </AuthProvider>
       </body>
