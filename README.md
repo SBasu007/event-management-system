@@ -266,14 +266,3 @@ Ensure the same `JWT_SECRET` is used across Auth Service and API Gateway from th
 
 Set `FRONTEND_ORIGIN=http://localhost:3000` in root `.env` and restart API Gateway.
 
-## 12) Current Limitations To Be Aware Of
-
-- `auth_db` and `attendee_db` names are currently fixed in Node service DB configs.
-- No unified root-level start script yet.
-- Docker setup is present in structure but not yet implemented.
-
-## 13) Suggested Next Improvements
-
-1. Move `auth_db` and `attendee_db` names to environment variables for full DB configurability.
-2. Add root scripts (or a process manager) to start all services with one command.
-3. Complete Dockerfiles and `docker-compose.yml` for one-command container startup.
