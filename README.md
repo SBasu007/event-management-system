@@ -169,7 +169,7 @@ Notes:
 - `JWT_SECRET` must match between Auth Service and API Gateway.
 - `auth_db` and `attendee_db` names are fixed in Node service DB config.
 
-## Run Without Docker (Optional)
+## Run Without Docker
 
 1. Create PostgreSQL databases:
 
