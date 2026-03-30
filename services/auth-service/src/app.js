@@ -13,6 +13,7 @@ import {
 
 
 const app = express();
+const authPort = Number(process.env.AUTH_SERVICE_PORT || 5001);
 
 app.use(cors());
 app.use(express.json());
@@ -22,8 +23,8 @@ const startServer = async () => {
 
   app.use("/auth", authRoutes);
 
-  app.listen(5001, () => {
-    console.log("Auth Service running on 5001");
+  app.listen(authPort, () => {
+    console.log(`Auth Service running on ${authPort}`);
   });
 };
 

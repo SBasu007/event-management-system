@@ -86,6 +86,8 @@ app.use("/events", eventRoutes);
 app.use("/budget", budgetRoutes);
 app.use("/attendees", attendeeRoutes);
 
-app.listen(5000, () => {
-  console.log(" API Gateway running on 5000");
+const gatewayPort = Number(process.env.API_GATEWAY_PORT || 5000);
+
+app.listen(gatewayPort, () => {
+  console.log(` API Gateway running on ${gatewayPort}`);
 });

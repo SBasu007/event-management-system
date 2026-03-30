@@ -7,10 +7,10 @@ dotenv.config({ path: "../../.env" });
 const DB_NAME = "auth_db";
 
 const config = {
-  user: "postgres",
-  host: "localhost",
-  password: "shomi777",
-  port: 5432,
+  user: process.env.DB_USER || "postgres",
+  host: process.env.DB_HOST || "localhost",
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT || 5432,
 };
 
 export const createDatabaseIfNotExists = async () => {
