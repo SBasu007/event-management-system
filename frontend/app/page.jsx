@@ -1,8 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function HomePage() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  const handleHostEventClick = () => {
+    if (loading) return;
+
+    if (user) {
+      router.push("/organizer_dashboard/events");
+      return;
+    }
+
+    router.push("/login");
+  };
+
   return (
     <section className="min-h-[calc(100vh-64px)] bg-[#efecfb] px-6 py-16 md:px-10 md:py-24">
       <div className="mx-auto flex max-w-4xl flex-col items-center text-center">
@@ -19,12 +35,14 @@ export default function HomePage() {
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Link
-            href="/organizer_dashboard"
-            className="rounded-xl bg-[#4f46e5] px-10 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(79,70,229,0.35)] transition hover:-translate-y-0.5 hover:bg-[#4338ca]"
+          <button
+            type="button"
+            onClick={handleHostEventClick}
+            disabled={loading}
+            className="rounded-xl bg-[#4f46e5] px-10 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(79,70,229,0.35)] transition hover:-translate-y-0.5 hover:bg-[#4338ca] disabled:cursor-not-allowed disabled:opacity-70"
           >
             Host Event
-          </Link>
+          </button>
           <Link
             href="/events"
             className="rounded-xl bg-[#dcd7f2] px-10 py-3 text-sm font-semibold text-[#312e5a] transition hover:-translate-y-0.5 hover:bg-[#d1caee]"

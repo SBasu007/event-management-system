@@ -98,7 +98,6 @@ export default function ProfilePanel({ isOpen, onClose, user, logout }) {
             onClick={handleLogout}
             className="profile-logout-btn"
           >
-            <span className="action-icon">🚪</span>
             <span>Logout</span>
           </button>
         </div>
