@@ -53,14 +53,34 @@ ATTENDEE_SERVICE_URL=http://localhost:5004
 
 FRONTEND_ORIGIN=http://localhost:3000
 
+API_GATEWAY_PORT=5000
+AUTH_SERVICE_PORT=5001
+EVENT_SERVICE_PORT=5002
+BUDGET_SERVICE_PORT=5003
+ATTENDEE_SERVICE_PORT=5004
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=change-this-db-password
+EVENT_DB_URL=jdbc:postgresql://localhost:5432/event_db
+BUDGET_DB_URL=jdbc:postgresql://localhost:5432/budget_db
+
 ADMIN_EMAIL=admin@example.com
 ADMIN_PASSWORD=change-this-password
 ADMIN_NAME=Platform Admin
 ```
 
+Create or update `frontend/.env.local` file:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
+```
+
 Notes:
 
-- API Gateway and Auth Service read values from the root `.env`.
+- API Gateway, Auth Service, Attendee Service, Event Service, and Budget Service read values from the root `.env`.
+- Frontend reads `NEXT_PUBLIC_API_BASE_URL` from `frontend/.env.local`.
 - `JWT_SECRET` must be the same for Auth Service and API Gateway.
 
 ## 4) Set Up PostgreSQL Databases
@@ -82,13 +102,8 @@ CREATE DATABASE budget_db;
 
 Important:
 
-- Some DB credentials are currently hardcoded in service files.
-- If your local PostgreSQL password is different, update these files:
-	- `services/auth-service/src/db/db.js`
-	- `services/auth-service/src/db/init.js`
-	- `services/attendee-service/src/db/db.js`
-	- `services/event-service/src/main/resources/application.properties`
-	- `services/budget-service/src/main/resources/application.properties`
+- DB credentials are now read from root `.env`.
+- `auth_db` and `attendee_db` database names are currently fixed in Node service code.
 
 ## 5) Install Dependencies
 
@@ -105,14 +120,14 @@ cd frontend && npm install && cd ..
 
 Start services in this order.
 
-### Terminal 1: Auth Service (5001)
+### Terminal 1: Auth Service (`AUTH_SERVICE_PORT`, default 5001)
 
 ```bash
 cd services/auth-service
 node src/app.js
 ```
 
-### Terminal 2: Event Service (5002)
+### Terminal 2: Event Service (`EVENT_SERVICE_PORT`, default 5002)
 
 Windows CMD/PowerShell:
 
@@ -128,7 +143,7 @@ cd services/event-service
 ./mvnw spring-boot:run
 ```
 
-### Terminal 3: Budget Service (5003)
+### Terminal 3: Budget Service (`BUDGET_SERVICE_PORT`, default 5003)
 
 Windows CMD/PowerShell:
 
@@ -144,14 +159,14 @@ cd services/budget-service
 ./mvnw spring-boot:run
 ```
 
-### Terminal 4: Attendee Service (5004)
+### Terminal 4: Attendee Service (`ATTENDEE_SERVICE_PORT`, default 5004)
 
 ```bash
 cd services/attendee-service
 node src/app.js
 ```
 
-### Terminal 5: API Gateway (5000)
+### Terminal 5: API Gateway (`API_GATEWAY_PORT`, default 5000)
 
 ```bash
 cd api-gateway
@@ -181,6 +196,16 @@ curl http://localhost:5000/events/vendors
 ```
 
 If these return JSON (including empty arrays), the gateway pathing is working.
+
+Gateway responses are standardized as:
+
+```json
+{
+	"status": "success",
+	"message": "Data fetched successfully",
+	"data": {}
+}
+```
 
 ## 8) Service And Port Map
 
@@ -229,7 +254,9 @@ Stop the process using the conflicting port, then restart the service.
 
 ### Database connection failed
 
-Check PostgreSQL is running, database names exist, and credentials match values in the service configs.
+Check PostgreSQL is running, database names exist, and credentials in root `.env` are correct.
+
+If you still see auth failures, verify there is no trailing space in `DB_PASSWORD`.
 
 ### JWT errors (`Invalid token`)
 
@@ -241,12 +268,12 @@ Set `FRONTEND_ORIGIN=http://localhost:3000` in root `.env` and restart API Gatew
 
 ## 12) Current Limitations To Be Aware Of
 
-- DB credentials are partially hardcoded in the current codebase.
+- `auth_db` and `attendee_db` names are currently fixed in Node service DB configs.
 - No unified root-level start script yet.
 - Docker setup is present in structure but not yet implemented.
 
 ## 13) Suggested Next Improvements
 
-1. Move all DB configs into environment variables for every service.
+1. Move `auth_db` and `attendee_db` names to environment variables for full DB configurability.
 2. Add root scripts (or a process manager) to start all services with one command.
 3. Complete Dockerfiles and `docker-compose.yml` for one-command container startup.
