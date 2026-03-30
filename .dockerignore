@@ -1,0 +1,59 @@
+# VCS
+.git
+.gitignore
+
+# Env / local config
+.env
+.env.*
+!.env.docker
+
+# OS / editor junk
+**/.DS_Store
+**/Thumbs.db
+**/.idea
+**/.vscode
+
+# Logs
+**/*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency and build caches
+**/node_modules
+**/.next
+**/dist
+**/build
+**/coverage
+**/.cache
+**/target
+**/.mvn/wrapper/maven-wrapper.jar
+
+# Python leftovers (just in case)
+**/__pycache__
+**/*.pyc
+
+# Keep Docker and app source needed by all current Dockerfiles
+!infrastructure/docker/**
+!api-gateway/**
+!frontend/**
+!services/auth-service/**
+!services/attendee-service/**
+!services/event-service/pom.xml
+!services/event-service/src/**
+!services/budget-service/pom.xml
+!services/budget-service/src/**
+!docker-compose.yml
+!README.md
+
+# Re-exclude heavy artifacts after whitelist rules
+frontend/node_modules
+frontend/.next
+frontend/dist
+frontend/build
+frontend/coverage
+frontend/.cache
+api-gateway/node_modules
+services/auth-service/node_modules
+services/attendee-service/node_modules
+services/**/target

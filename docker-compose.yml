@@ -1,0 +1,100 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: event_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/db/init-dbs.sql:/docker-entrypoint-initdb.d/00-init-dbs.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/auth.Dockerfile
+    env_file:
+      - .env.docker
+    ports:
+      - "5001:5001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  attendee-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/attendee.Dockerfile
+    env_file:
+      - .env.docker
+    ports:
+      - "5004:5004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  event-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/event.Dockerfile
+    env_file:
+      - .env.docker
+    ports:
+      - "5002:5002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  budget-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/budget.Dockerfile
+    env_file:
+      - .env.docker
+    ports:
+      - "5003:5003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/gateway.Dockerfile
+    env_file:
+      - .env.docker
+    ports:
+      - "5000:5000"
+    depends_on:
+      - auth-service
+      - attendee-service
+      - event-service
+      - budget-service
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/frontend.Dockerfile
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:5000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
