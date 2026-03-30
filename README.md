@@ -74,18 +74,10 @@ The code currently expects PostgreSQL on:
 Create required databases:
 
 ```sql
+CREATE DATABASE auth_db;
 CREATE DATABASE attendee_db;
 CREATE DATABASE event_db;
 CREATE DATABASE budget_db;
-```
-
-`auth_db` is created automatically by Auth Service startup.
-
-Optional but recommended for auth UUID generation:
-
-```sql
-\c auth_db
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
 ```
 
 Important:

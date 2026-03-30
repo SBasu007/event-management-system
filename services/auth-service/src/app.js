@@ -18,7 +18,6 @@ app.use(cors());
 app.use(express.json());
 
 const startServer = async () => {
-  await createDatabaseIfNotExists();
   await createTables();
 
   app.use("/auth", authRoutes);
