@@ -41,6 +41,22 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// ADMIN LOGIN
+router.post("/admin/login", async (req, res) => {
+  try {
+    const response = await axios.post(
+      `${SERVICES.AUTH}/auth/admin/login`,
+      req.body
+    );
+
+    res.status(response.status).json(response.data);
+  } catch (err) {
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data || "Auth service error",
+    });
+  }
+});
+
 // IDENTIFY USER
 router.get("/me", verifyToken, async (req, res) => {
   try {
@@ -57,6 +73,23 @@ router.get("/me", verifyToken, async (req, res) => {
   } catch (err) {
     res.status(err.response?.status || 500).json({
       error: err.response?.data || "Error fetching user",
+    });
+  }
+});
+
+// ADMIN PROFILE
+router.get("/admin/me", verifyToken, async (req, res) => {
+  try {
+    const response = await axios.get(`${SERVICES.AUTH}/auth/admin/me`, {
+      headers: {
+        Authorization: req.headers.authorization,
+      },
+    });
+
+    res.json(response.data);
+  } catch (err) {
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data || "Error fetching admin profile",
     });
   }
 });

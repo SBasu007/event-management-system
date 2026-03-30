@@ -25,4 +25,7 @@ public class Event {
     private String imgUrl;
     private Long venueId;
     private UUID organizerId;
+
+    @Column(nullable = false)
+    private Boolean active = true;
 }

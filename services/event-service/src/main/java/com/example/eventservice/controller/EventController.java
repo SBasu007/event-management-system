@@ -40,6 +40,16 @@ public class EventController {
         return service.updateEvent(id, event);
     }
 
+    @PatchMapping("/{id}/disable")
+    public Event disable(@PathVariable Long id) {
+        return service.disableEvent(id);
+    }
+
+    @PatchMapping("/{id}/enable")
+    public Event enable(@PathVariable Long id) {
+        return service.enableEvent(id);
+    }
+
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         service.deleteEvent(id);

@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
 	List<Event> findByOrganizerId(UUID organizerId);
+	List<Event> findByOrganizerIdAndActiveTrue(UUID organizerId);
 }

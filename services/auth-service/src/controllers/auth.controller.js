@@ -1,4 +1,11 @@
-import { registerUser, loginUser,  getUserById, updateUserService, } from "../services/auth.service.js";
+import {
+  registerUser,
+  loginUser,
+  loginAdminUser,
+  getUserById,
+  getAdminUserById,
+  updateUserService,
+} from "../services/auth.service.js";
 import { generateToken } from "../utils/jwt.js";
 
 
@@ -27,6 +34,17 @@ export const login = async (req, res) => {
   }
 };
 
+export const adminLogin = async (req, res) => {
+  try {
+    const admin = await loginAdminUser(req.body);
+    const token = generateToken({ id: admin.id, role: "admin" });
+
+    res.json({ token });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
 // GET /users/me
 export const getMe = async (req, res) => {
   try {
@@ -42,6 +60,23 @@ export const updateUser = async (req, res) => {
   try {
     const updated = await updateUserService(req.user.id, req.body);
     res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const getAdminMe = async (req, res) => {
+  try {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    const admin = await getAdminUserById(req.user.id);
+    if (!admin) {
+      return res.status(404).json({ error: "Admin user not found" });
+    }
+
+    res.json(admin);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

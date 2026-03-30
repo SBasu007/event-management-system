@@ -1,5 +1,8 @@
 import pkg from "pg";
+import bcrypt from "bcrypt";
 const { Client } = pkg;
+import dotenv from "dotenv";
+dotenv.config({ path: "../../.env" });
 
 const DB_NAME = "auth_db";
 
@@ -54,7 +57,38 @@ export const createTables = async () => {
     ADD COLUMN IF NOT EXISTS contact VARCHAR(13);
   `);
 
-  console.log("Users table ready");
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS admin_users (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name VARCHAR(100) NOT NULL,
+      email VARCHAR(100) UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminName = process.env.ADMIN_NAME || "Platform Admin";
+
+  if (adminEmail && adminPassword) {
+    const existingAdmin = await client.query(
+      "SELECT id FROM admin_users WHERE email=$1",
+      [adminEmail]
+    );
+
+    if (existingAdmin.rowCount === 0) {
+      const hashed = await bcrypt.hash(adminPassword, 10);
+      await client.query(
+        `INSERT INTO admin_users (name, email, password_hash)
+         VALUES ($1, $2, $3)`,
+        [adminName, adminEmail, hashed]
+      );
+      console.log("Seeded admin_users with ADMIN_EMAIL account");
+    }
+  }
+
+  console.log("Users and admin_users tables ready");
 
   await client.end();
 };

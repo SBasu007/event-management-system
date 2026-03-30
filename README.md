@@ -1,0 +1,260 @@
+# Event Management Platform
+
+Microservices-based event management application with:
+
+- Frontend: Next.js
+- API Gateway: Node.js + Express
+- Services:
+	- Auth Service (Node.js)
+	- Attendee Service (Node.js)
+	- Event Service (Spring Boot)
+	- Budget Service (Spring Boot)
+- Database: PostgreSQL
+
+This guide helps a new developer clone, configure, and run the project locally.
+
+## 1) Clone The Repository
+
+```bash
+git clone <your-repository-url>
+cd event-management
+```
+
+## 2) Prerequisites
+
+Install the following before running locally:
+
+- Git
+- Node.js 18+ and npm
+- Java 21
+- Maven (optional, wrappers are included for Java services)
+- PostgreSQL 14+ (or compatible)
+
+Quick version checks:
+
+```bash
+node -v
+npm -v
+java -version
+psql --version
+```
+
+## 3) Configure Environment Variables
+
+Create or update root `.env` file:
+
+```env
+JWT_SECRET=change-this-to-a-long-random-secret
+
+AUTH_SERVICE_URL=http://localhost:5001
+EVENT_SERVICE_URL=http://localhost:5002
+BUDGET_SERVICE_URL=http://localhost:5003
+ATTENDEE_SERVICE_URL=http://localhost:5004
+
+FRONTEND_ORIGIN=http://localhost:3000
+
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=change-this-password
+ADMIN_NAME=Platform Admin
+```
+
+Notes:
+
+- API Gateway and Auth Service read values from the root `.env`.
+- `JWT_SECRET` must be the same for Auth Service and API Gateway.
+
+## 4) Set Up PostgreSQL Databases
+
+The code currently expects PostgreSQL on:
+
+- host: `localhost`
+- port: `5432`
+- user: `postgres`
+
+Create required databases:
+
+```sql
+CREATE DATABASE attendee_db;
+CREATE DATABASE event_db;
+CREATE DATABASE budget_db;
+```
+
+`auth_db` is created automatically by Auth Service startup.
+
+Optional but recommended for auth UUID generation:
+
+```sql
+\c auth_db
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+```
+
+Important:
+
+- Some DB credentials are currently hardcoded in service files.
+- If your local PostgreSQL password is different, update these files:
+	- `services/auth-service/src/db/db.js`
+	- `services/auth-service/src/db/init.js`
+	- `services/attendee-service/src/db/db.js`
+	- `services/event-service/src/main/resources/application.properties`
+	- `services/budget-service/src/main/resources/application.properties`
+
+## 5) Install Dependencies
+
+Run in project root:
+
+```bash
+cd api-gateway && npm install && cd ..
+cd services/auth-service && npm install && cd ../..
+cd services/attendee-service && npm install && cd ../..
+cd frontend && npm install && cd ..
+```
+
+## 6) Run Services (Use Separate Terminals)
+
+Start services in this order.
+
+### Terminal 1: Auth Service (5001)
+
+```bash
+cd services/auth-service
+node src/app.js
+```
+
+### Terminal 2: Event Service (5002)
+
+Windows CMD/PowerShell:
+
+```bat
+cd services\event-service
+mvnw.cmd spring-boot:run
+```
+
+Git Bash:
+
+```bash
+cd services/event-service
+./mvnw spring-boot:run
+```
+
+### Terminal 3: Budget Service (5003)
+
+Windows CMD/PowerShell:
+
+```bat
+cd services\budget-service
+mvnw.cmd spring-boot:run
+```
+
+Git Bash:
+
+```bash
+cd services/budget-service
+./mvnw spring-boot:run
+```
+
+### Terminal 4: Attendee Service (5004)
+
+```bash
+cd services/attendee-service
+node src/app.js
+```
+
+### Terminal 5: API Gateway (5000)
+
+```bash
+cd api-gateway
+node src/app.js
+```
+
+### Terminal 6: Frontend (3000)
+
+```bash
+cd frontend
+npm run dev
+```
+
+Open:
+
+- Frontend: http://localhost:3000
+- API Gateway: http://localhost:5000
+
+## 7) Quick Smoke Checks
+
+After all services start:
+
+```bash
+curl http://localhost:5000/events
+curl http://localhost:5000/events/venues
+curl http://localhost:5000/events/vendors
+```
+
+If these return JSON (including empty arrays), the gateway pathing is working.
+
+## 8) Service And Port Map
+
+| Component | Port | Notes |
+|---|---:|---|
+| Frontend (Next.js) | 3000 | Calls gateway at `http://localhost:5000` |
+| API Gateway | 5000 | Aggregates and proxies all backend services |
+| Auth Service | 5001 | JWT + user/admin auth |
+| Event Service | 5002 | Event, venue, vendor operations |
+| Budget Service | 5003 | Budget and expense operations |
+| Attendee Service | 5004 | RSVP and attendee records |
+| PostgreSQL | 5432 | Stores all service databases |
+
+## 9) API Gateway Base Routes
+
+Gateway prefixes:
+
+- `/auth`
+- `/events`
+- `/budget`
+- `/attendees`
+
+Examples:
+
+- `POST /auth/register`
+- `POST /auth/login`
+- `GET /events`
+- `GET /events/:id`
+- `POST /budget`
+- `POST /attendees/book`
+
+## 10) Docker Status
+
+Currently, Docker artifacts in this repository are not fully configured:
+
+- Root `docker-compose.yml` is empty.
+- Dockerfiles under `infrastructure/docker/` are empty.
+
+Use the manual local run steps above.
+
+## 11) Troubleshooting
+
+### Port already in use
+
+Stop the process using the conflicting port, then restart the service.
+
+### Database connection failed
+
+Check PostgreSQL is running, database names exist, and credentials match values in the service configs.
+
+### JWT errors (`Invalid token`)
+
+Ensure the same `JWT_SECRET` is used across Auth Service and API Gateway from the root `.env`.
+
+### CORS issues
+
+Set `FRONTEND_ORIGIN=http://localhost:3000` in root `.env` and restart API Gateway.
+
+## 12) Current Limitations To Be Aware Of
+
+- DB credentials are partially hardcoded in the current codebase.
+- No unified root-level start script yet.
+- Docker setup is present in structure but not yet implemented.
+
+## 13) Suggested Next Improvements
+
+1. Move all DB configs into environment variables for every service.
+2. Add root scripts (or a process manager) to start all services with one command.
+3. Complete Dockerfiles and `docker-compose.yml` for one-command container startup.

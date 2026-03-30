@@ -32,6 +32,30 @@ export const loginUser = async ({ email, password }) => {
   return user;
 };
 
+export const loginAdminUser = async ({ email, password }) => {
+  const result = await pool.query(
+    "SELECT * FROM admin_users WHERE email=$1",
+    [email]
+  );
+
+  const admin = result.rows[0];
+  if (!admin) throw new Error("Admin user not found");
+
+  const isMatch = await bcrypt.compare(password, admin.password_hash);
+  if (!isMatch) throw new Error("Invalid credentials");
+
+  return admin;
+};
+
+export const getAdminUserById = async (id) => {
+  const result = await pool.query(
+    "SELECT id, name, email, created_at FROM admin_users WHERE id=$1",
+    [id]
+  );
+
+  return result.rows[0];
+};
+
 // GET USER BY ID
 export const getUserById = async (id) => {
   const result = await pool.query(

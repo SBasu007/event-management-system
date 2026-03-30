@@ -1,9 +1,36 @@
 import express from "express";
 import axios from "axios";
 import { SERVICES } from "../config/services.js";
-import { verifyToken } from "../middleware/auth.middleware.js";
+import { verifyAdmin, verifyToken } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+const loadEventFullDetails = async (event) => {
+  const venuePromise = event?.venueId
+    ? axios.get(`${SERVICES.EVENT}/venues/${event.venueId}`).then((res) => res.data)
+    : Promise.resolve(null);
+
+  const mappingsPromise = axios
+    .get(`${SERVICES.EVENT}/event-vendors/event/${event.id}`)
+    .then((res) => (Array.isArray(res.data) ? res.data : []));
+
+  const [venue, mappings] = await Promise.all([venuePromise, mappingsPromise]);
+
+  const vendors = await Promise.all(
+    mappings.map((mapping) =>
+      axios
+        .get(`${SERVICES.EVENT}/vendors/${mapping.vendorId}`)
+        .then((res) => res.data)
+        .catch(() => null)
+    )
+  );
+
+  return {
+    ...event,
+    venue,
+    vendors: vendors.filter(Boolean),
+  };
+};
 
 router.get("/:id/full", async (req, res) => {
   try {
@@ -16,36 +43,7 @@ router.get("/:id/full", async (req, res) => {
 
     const event = eventRes.data;
 
-    //  Get venue
-    const venueRes = await axios.get(
-      `${SERVICES.EVENT}/venues/${event.venueId}`
-    );
-
-    const venue = venueRes.data;
-
-    //  Get event-vendor mappings
-    const mappingRes = await axios.get(
-      `${SERVICES.EVENT}/event-vendors/event/${eventId}`
-    );
-
-    const mappings = mappingRes.data;
-
-    //  Get vendor details
-    const vendors = await Promise.all(
-      mappings.map(async (m) => {
-        const v = await axios.get(
-          `${SERVICES.EVENT}/vendors/${m.vendorId}`
-        );
-        return v.data;
-      })
-    );
-
-    //  Combine everything
-    const fullResponse = {
-      ...event,
-      venue,
-      vendors,
-    };
+    const fullResponse = await loadEventFullDetails(event);
 
     res.json(fullResponse);
 
@@ -61,8 +59,10 @@ router.get("/", async (req, res) => {
     const response = await axios.get(
       `${SERVICES.EVENT}/events`
     );
+    const events = Array.isArray(response.data) ? response.data : [];
+    const activeEvents = events.filter((event) => event?.active !== false);
 
-    res.json(response.data);
+    res.json(activeEvents);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -75,8 +75,23 @@ router.get("/organizer/:organizerId", async (req, res) => {
     const response = await axios.get(
       `${SERVICES.EVENT}/events/organizer/${req.params.organizerId}`
     );
+    const events = Array.isArray(response.data) ? response.data : [];
+    const activeEvents = events.filter((event) => event?.active !== false);
 
-    res.json(response.data);
+    res.json(activeEvents);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET ALL EVENTS (INCLUDING DISABLED) BY ORGANIZER ID
+router.get("/organizer/:organizerId/all", verifyToken, async (req, res) => {
+  try {
+    const response = await axios.get(
+      `${SERVICES.EVENT}/events/organizer/${req.params.organizerId}`
+    );
+
+    res.json(Array.isArray(response.data) ? response.data : []);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -102,6 +117,59 @@ router.get("/vendors", async (req, res) => {
       `${SERVICES.EVENT}/vendors`
     );
 
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ADMIN MASTER VIEW OF EVENTS
+router.get("/admin/master", verifyAdmin, async (req, res) => {
+  try {
+    const eventsRes = await axios.get(`${SERVICES.EVENT}/events`);
+    const events = Array.isArray(eventsRes.data) ? eventsRes.data : [];
+
+    const fullEvents = await Promise.all(events.map((event) => loadEventFullDetails(event)));
+    res.json(fullEvents);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ADMIN CREATE VENUE
+router.post("/admin/venues", verifyAdmin, async (req, res) => {
+  try {
+    const response = await axios.post(`${SERVICES.EVENT}/venues`, req.body);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ADMIN UPDATE VENUE
+router.put("/admin/venues/:id", verifyAdmin, async (req, res) => {
+  try {
+    const response = await axios.put(`${SERVICES.EVENT}/venues/${req.params.id}`, req.body);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ADMIN CREATE VENDOR
+router.post("/admin/vendors", verifyAdmin, async (req, res) => {
+  try {
+    const response = await axios.post(`${SERVICES.EVENT}/vendors`, req.body);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ADMIN UPDATE VENDOR
+router.put("/admin/vendors/:id", verifyAdmin, async (req, res) => {
+  try {
+    const response = await axios.put(`${SERVICES.EVENT}/vendors/${req.params.id}`, req.body);
     res.json(response.data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -200,6 +268,50 @@ router.put("/:id", verifyToken, async (req, res) => {
       req.body
     );
 
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DISABLE EVENT (ORGANIZER/ADMIN)
+router.patch("/:id/disable", verifyToken, async (req, res) => {
+  try {
+    const eventId = req.params.id;
+    const eventRes = await axios.get(`${SERVICES.EVENT}/events/${eventId}`);
+    const event = eventRes.data;
+
+    const userId = String(req.user?.id || "");
+    const isAdmin = req.user?.role === "admin";
+    const isOwner = String(event?.organizerId || "") === userId;
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ error: "Not allowed to disable this event" });
+    }
+
+    const response = await axios.patch(`${SERVICES.EVENT}/events/${eventId}/disable`);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ENABLE EVENT (ORGANIZER/ADMIN)
+router.patch("/:id/enable", verifyToken, async (req, res) => {
+  try {
+    const eventId = req.params.id;
+    const eventRes = await axios.get(`${SERVICES.EVENT}/events/${eventId}`);
+    const event = eventRes.data;
+
+    const userId = String(req.user?.id || "");
+    const isAdmin = req.user?.role === "admin";
+    const isOwner = String(event?.organizerId || "") === userId;
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ error: "Not allowed to enable this event" });
+    }
+
+    const response = await axios.patch(`${SERVICES.EVENT}/events/${eventId}/enable`);
     res.json(response.data);
   } catch (err) {
     res.status(500).json({ error: err.message });
